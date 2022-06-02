@@ -15,7 +15,7 @@ $$
 \frac{d T}{d\lambda} = S(\mathbf{x})
 $$
 
-Given a takeoff direction specified by the inclination angle, $\alpha$, azimuth angle, $\beta$, and a velocity model solve the ODE ray system above. The system is integrated by `scipy.integrate.solve_ivp` which by default uses an explicit Runge-Kutta method of order 5(4). Note that the parameter $\lambda$ has a physical meaning of length along the ray; any other parameter that increasses monotonically along the ray could be used. It can be set arbitrarily large.
+Given a takeoff direction specified by the inclination angle, $\alpha$, azimuth angle, $\beta$, and a velocity model, solve the ODE ray system above. The system is integrated by `scipy.integrate.solve_ivp` which by default uses an explicit Runge-Kutta method of order 5(4). Note that the parameter $\lambda$ has a physical meaning of length along the ray; any other parameter that increases monotonically along the ray could be used. For running the solver, the stopping "time" of the integration $\lambda_f$ can be set arbitrarily large.
 
 
 # Requirements
