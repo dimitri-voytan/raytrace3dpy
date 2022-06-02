@@ -1,4 +1,3 @@
-from multiprocessing.sharedctypes import Value
 from scipy.integrate import solve_ivp
 from scipy.interpolate import RegularGridInterpolator
 import numpy as np
