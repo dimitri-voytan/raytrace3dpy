@@ -1,7 +1,7 @@
 # raytrace3dpy
-3D one-point ray tracing code
 
-Solves the ODE ray system
+This code is designed to solve one-point ray tracing problems in 3D heterogenous media.
+The code solves the ODE ray system
 
 $$
 \frac{d\mathbf{x}}{d\lambda} = \frac{1}{S(\mathbf{x})}\mathbf{p}
