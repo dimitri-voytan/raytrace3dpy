@@ -25,6 +25,7 @@ The only dependancies are Scipy and Numpy. An installation of Scipy includes Num
 
 ```
 conda create -n raytrace3d python=3.x #Change x to any scipy compatible python
+conda activate raytrace3d
 conda install -c conda-forge scipy 
 ```
 
