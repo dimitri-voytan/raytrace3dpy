@@ -19,6 +19,15 @@ Where $S(\mathbf{x}) = \frac{1}{V(\mathbf{x})}$ is the slowness or reciprocal of
 
 The user provides a velocity model, an initial source location $(x_0, y_0, z_0)$, and a takeoff direction specified by the inclination angle, $\alpha$ and azimuth angle, $\beta$.  The system is integrated by `scipy.integrate.solve_ivp` which by default uses an explicit Runge-Kutta method of order 5(4). For running the solver, the stopping "time" (alluding to the dependent variable of ODEs often being time) of the integration $\lambda_f$ can be set arbitrarily large, because the solver stops when a ray exits the domain.
 
+# Requirements
+
+The only dependancies are Scipy and Numpy. An installation of Scipy includes Numpy so a working environemt can be built by
+
+```
+conda create -n raytrace3d python=3.x #Change x to any scipy compatible python
+conda install -c conda-forge scipy 
+```
+
 # Getting Started
 
 The tutorial notebook `tutorial.ipynb` shows an example of setting up the solver and tracing rays in a simple velocity model. Below I list a few key considerations for a user 
@@ -53,12 +62,4 @@ Multiple rays can be traced by passing a list of tuples for the source coordinat
 
 ```
 out = tracer.run(parallel=True, n_procs=6)
-```
-
-# Requirements
-
-The only dependancies are Scipy and Numpy. An installation of Scipy includes Numpy so a working environemt can be built by
-
-```
-conda install -c conda-forge scipy 
 ```
