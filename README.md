@@ -21,9 +21,17 @@ given a takeoff direction specified by the inclination angle, $\alpha$, azimuth 
 
 The takeoff direction is specified with a pair of angles $(\alpha, \beta)$. $\alpha$ is the inclination angle and $\beta$ is the azimuth. $\alpha=0$ when $\mathbf{p}$ is aligned with the $z$ direction (downward) and increases counterclockwise. $\beta=0$ when $\mathbf{p}$ is aligned with the $x$ axis and increases clockwise.
 
+## Tracing multiple rays
+
+Multiple rays can be traced by passing a list of tuples for the source coordinates and takeoff angles e.g. `srcs=[(0,0,0), (0,0,0)]` `angles=[(0,45), (0,30)]`. Tracing can be run in parallel by passing `parallel=True` and `n_procs` to the runner. For example
+
+```
+out = tracer.run(parallel=True, n_procs=6)
+```
+
 # Requirements
 
-The only dependancies are scipy, numpy, and matplotlib.
+The only dependancies are scipy and numpy.
 
 # Getting Started
 
