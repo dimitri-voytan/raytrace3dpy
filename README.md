@@ -15,7 +15,9 @@ $$
 \frac{d T}{d\lambda} = S(\mathbf{x})
 $$
 
-given a takeoff direction specified by the inclination angle, $\alpha$, azimuth angle, $\beta$, and a velocity model. The system is integrated by `scipy.integrate.solve_ivp` which by default uses an explicit Runge-Kutta method of order 5(4). Note that the parameter $\lambda$ has a physical meaning of length along the ray; any other parameter that increases monotonically along the ray could be used. For running the solver, the stopping "time" of the integration $\lambda_f$ can be set arbitrarily large.
+Where $S(\mathbf{x}) = \frac{1}{V(\mathbf{x})}$ is the slowness or reciprocal of velocity, $\mathbf{x}$ is the spatial coordinate of the ray, $\mathbf{p}$ is the ray vecotor, $T$ is the traveltime along the ray, and $\lambda$ is a paramater that increases monotonically along the ray; it has the physical meaning of length along the ray
+
+The user provides a velocity model, an initial source location $(x_0, y_0, z_0)$, and a takeoff direction specified by the inclination angle, $\alpha$ and azimuth angle, $\beta$.  The system is integrated by `scipy.integrate.solve_ivp` which by default uses an explicit Runge-Kutta method of order 5(4). For running the solver, the stopping "time" (alluding to the dependent variable of ODEs often being time) of the integration $\lambda_f$ can be set arbitrarily large, because the solver stops when a ray exits the domain.
 
 ## Takeoff angle
 
@@ -31,7 +33,11 @@ out = tracer.run(parallel=True, n_procs=6)
 
 # Requirements
 
-The only dependancies are scipy and numpy.
+The only dependancies are Scipy and Numpy. An installation of Scipy includes numpy so a working environemt can be built by
+
+```
+conda install -c conda-forge scipy 
+```
 
 # Getting Started
 
