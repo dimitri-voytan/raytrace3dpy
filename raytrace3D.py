@@ -35,8 +35,8 @@ class Stopper:
 
 class OnePointTrace3D():
     def __init__(self,
-                 src_coord : Tuple,
-                 takeoff_angle : Tuple,
+                 src_coords : Tuple,
+                 takeoff_angles : Tuple,
                  velocity : np.ndarray,
                  x_coords : np.ndarray,
                  y_coords : np.ndarray,
@@ -66,18 +66,19 @@ class OnePointTrace3D():
         # Create interpolator objects for common terms
         self.slowness = self.initialize_slowness()
 
-        # Initial conditions
-        self.src_coord = src_coord
-        self.takeoff_angle = takeoff_angle
-        self.y0 = np.array([*self.src_coord, *self.initialize_p(), 0])
+        self.y0 = []
 
-        # Stopping conditions. Ray will run until it hits the boundary or tf.
+        # Initial conditions
+        for src, angle in zip(src_coords, takeoff_angles):
+            self.y0.append(np.array([*src, *self.initialize_p(src, angle), 0]))
+
+        # Stopping conditions. Rays will run until it hits the boundary or tf.
         # tf has the physical meaning of length along the ray
         self.lf = lf
 
-    def initialize_p(self):
-        s_0 = self.slowness(self.src_coord)
-        alpha, beta = [self.deg2rad(item) for item in self.takeoff_angle]
+    def initialize_p(self, src, angle):
+        s_0 = self.slowness(src)
+        alpha, beta = [self.deg2rad(item) for item in angle]
         p_1 = s_0*np.sin(alpha)*np.cos(beta)
         p_2 = s_0*np.sin(alpha)*np.sin(beta)
         p_3 = s_0*np.cos(alpha)
@@ -126,9 +127,16 @@ class OnePointTrace3D():
 
         return (one_over_s)*p1, (one_over_s)*p2, (one_over_s)*p3, ds_dx, ds_dy, ds_dz, s
 
-    def run(self, **kwargs):
+    def trace_single_ray(self, ray_init, events, **kwargs):
+        out = solve_ivp(self.rhs, (0, self.lf), ray_init, events=events, **kwargs)
+        out['init_conds'] = ray_init  # Store the initial conditions to identify later
+        return out
+
+    def run(self, parallel=False, **kwargs):
         '''
-        Can pass kwargs to the rk solver
+        Can pass kwargs to the rk solver to change order etc. See scipy.integrate.solveivp
+        for details
+
         '''
         # List of index, val which tells the solver to stop 
         # if it encounters a model boundary
@@ -142,5 +150,17 @@ class OnePointTrace3D():
         event_list = [Stopper(bound[0], bound[1]) for bound in bounds]
         events = [event.stopping_criteria for event in event_list]
 
-        out = solve_ivp(self.rhs, (0, self.lf), self.y0, events=events, **kwargs)
+        out = []
+
+        if parallel:
+            from multiprocessing import Pool
+            from functools import partial 
+
+            n_procs = kwargs.pop('n_procs', 4)
+            with Pool(n_procs) as p:
+                f = partial(self.trace_single_ray, events=events, **kwargs)
+                out = p.map(f, self.y0)
+        else:
+            for ray_init in self.y0:
+                out.append(self.trace_single_ray(ray_init, events, **kwargs))
         return out
