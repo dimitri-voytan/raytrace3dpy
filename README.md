@@ -1,6 +1,6 @@
 # raytrace3dpy
 
-This code is designed to solve one-point ray tracing problems in 3D heterogenous media.
+This code is designed to solve one-point ray tracing problems in 3D, isotropic, heterogenous media.
 The code solves the ODE ray system
 
 $$
