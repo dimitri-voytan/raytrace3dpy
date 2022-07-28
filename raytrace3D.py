@@ -60,8 +60,16 @@ class OnePointTrace3D():
         self.dz = z_coords[1]-z_coords[0]
 
         self.velocity = velocity
+        
+        # If a single tuple is passed (i.e. one source and takeoff) wrap in a list so that zip
+        # expands correctly. 
+        if np.ndim(src_coords) <= 1:
+            src_coords = [src_coords]
+            
+        if np.ndim(takeoff_angles) <= 1:
+           takeoff_angles = [takeoff_angles]
 
-        self.n_pad = 5
+        self.n_pad = 10
 
         # Create interpolator objects for common terms
         self.slowness = self.initialize_slowness()
