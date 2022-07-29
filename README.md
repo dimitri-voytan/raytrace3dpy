@@ -33,7 +33,7 @@ conda install -c conda-forge scipy
 
 The tutorial notebook `tutorial.ipynb` shows an example of setting up the solver and tracing rays in a simple velocity model. Below I list a few key considerations for a user 
 
-1.The output of a run is a list of [solution objects](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html#scipy.integrate.solve_ivp) for each ray. It has attributes which can be accesed in a dictionary like manner to view the solution and the evaluation points. The solution is stored in the attribute `y` and the evaluation $\lambda$'s are stored in `t`. For example, if you traced a single ray and stored the solution in `out` you can access the $\mathbf{x}$ coordinates of the ray, $\mathbf{p}$ values, and traveltime $T$ by:
+1. The output of a run is a list of [solution objects](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html#scipy.integrate.solve_ivp) for each ray. It has attributes which can be accesed in a dictionary like manner to view the solution and the evaluation points. The solution is stored in the attribute `y` and the evaluation $\lambda$'s are stored in `t`. For example, if you traced a single ray and stored the solution in `out` you can access the $\mathbf{x}$ coordinates of the ray, $\mathbf{p}$ values, and traveltime $T$ by:
 
 ```
 x, y, z, = out['y'][0], out['y'][1], out['y'][2]
