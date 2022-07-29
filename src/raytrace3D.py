@@ -2,37 +2,13 @@ from scipy.integrate import solve_ivp
 from scipy.interpolate import RegularGridInterpolator
 import numpy as np
 from typing import Tuple
+from utils import Stopper
 
 '''
 Solves one-point ray tracing
 Requires src location, takeoff angle, and velocity
 '''
-
-def terminalevent(f):
-    f.terminal = True
-    return f
-
-class Stopper:
-    '''
-    Helper class for stopping when the ray hits the boundary
-    '''
-    def __init__(self,
-                 idx : int,
-                 bound : float):
-        '''
-        Bound is the boundary value.
-        '''
-        self.idx = idx
-        self.bound = bound
-
-    @terminalevent
-    def stopping_criteria(self, t, y_bar):
-        '''
-        Stop if a ray exits the domain (i.e. the return of this function changes sign)
-        '''
-        return y_bar[self.idx]-self.bound
         
-
 class OnePointTrace3D():
     def __init__(self,
                  src_coords : Tuple,
