@@ -8,17 +8,18 @@ from utils import Stopper
 Solves one-point ray tracing
 Requires src location, takeoff angle, and velocity
 '''
-        
+
+    
 class OnePointTrace3D():
     def __init__(self,
-                 src_coords : Tuple,
-                 takeoff_angles : Tuple,
-                 velocity : np.ndarray,
-                 x_coords : np.ndarray,
-                 y_coords : np.ndarray,
-                 z_coords : np.ndarray,
-                 lf : float,
-                 n_pad : int = 10):
+                 src_coords: Tuple,
+                 takeoff_angles: Tuple,
+                 velocity: np.ndarray,
+                 x_coords: np.ndarray,
+                 y_coords: np.ndarray,
+                 z_coords: np.ndarray,
+                 lf: float,
+                 n_pad: int = 10):
         '''
         takeoff angle: Tuple of (inclination [0:pi), azimuth [0:2pi) )
         '''
@@ -37,15 +38,15 @@ class OnePointTrace3D():
 
         self.velocity = velocity
         
-        # If a single tuple is passed (i.e. one source and takeoff) wrap in a list so that zip
-        # expands correctly. 
+        # If a single tuple is passed (i.e. one source and takeoff) 
+        # wrap in a list so that zip expands correctly.
         if np.ndim(src_coords) <= 1:
             src_coords = [src_coords]
             
         if np.ndim(takeoff_angles) <= 1:
-           takeoff_angles = [takeoff_angles]
+            takeoff_angles = [takeoff_angles]
 
-        self.n_pad = 10
+        self.n_pad = n_pad
 
         # Create interpolator objects for common terms
         self.slowness = self.initialize_slowness()
@@ -70,12 +71,16 @@ class OnePointTrace3D():
 
     def initialize_slowness(self):
         '''
-        Add padding so that if the slowness is computed outside of the domain (when the ray escapes)
+        Add padding so that if the slowness is
+        computed outside of the domain (when the ray escapes)
         this will be properly handled
         '''
-        x_coords = np.pad(self.x_coords, self.n_pad, mode='reflect', reflect_type='odd')
-        y_coords = np.pad(self.y_coords, self.n_pad, mode='reflect', reflect_type='odd')
-        z_coords = np.pad(self.z_coords, self.n_pad, mode='reflect', reflect_type='odd')
+        x_coords = np.pad(self.x_coords, self.n_pad,
+                          mode='reflect', reflect_type='odd')
+        y_coords = np.pad(self.y_coords, self.n_pad, mode='reflect',
+                          reflect_type='odd')
+        z_coords = np.pad(self.z_coords, self.n_pad,
+                          mode='reflect', reflect_type='odd')
         vel = np.pad(self.velocity, self.n_pad, mode='edge')
 
         return RegularGridInterpolator((x_coords,
@@ -92,9 +97,9 @@ class OnePointTrace3D():
         '''
         x, y, z = [int(item) for item in coord]
         # Could replace with a higher order scheme?
-        ds_dx = (s((x+self.dx,y,z))-s((x-self.dx,y,z)))/(2*self.dx)
-        ds_dy = (s((x,y+self.dy,z))-s((x,y-self.dy,z)))/(2*self.dy)
-        ds_dz = (s((x,y,z+self.dz))-s((x,y,z-self.dz)))/(2*self.dz)
+        ds_dx = (s((x+self.dx, y, z))-s((x-self.dx, y, z)))/(2*self.dx)
+        ds_dy = (s((x, y+self.dy, z))-s((x, y-self.dy, z)))/(2*self.dy)
+        ds_dz = (s((x, y, z+self.dz))-s((x, y, z-self.dz)))/(2*self.dz)
         return ds_dx, ds_dy, ds_dz
 
     def rhs(self, t, y_bar):
@@ -109,20 +114,25 @@ class OnePointTrace3D():
 
         ds_dx, ds_dy, ds_dz = self.get_grad_s(self.slowness, (x, y, z))
 
-        return (one_over_s)*p1, (one_over_s)*p2, (one_over_s)*p3, ds_dx, ds_dy, ds_dz, s
+        return (one_over_s)*p1, (one_over_s)*p2, (one_over_s)*p3, \
+                ds_dx, ds_dy, ds_dz, s
 
     def trace_single_ray(self, ray_init, events, **kwargs):
-        out = solve_ivp(self.rhs, (0, self.lf), ray_init, events=events, **kwargs)
-        out['init_conds'] = ray_init  # Store the initial conditions to identify later
+        out = solve_ivp(self.rhs,
+                        (0, self.lf),
+                        ray_init,
+                        events=events,
+                        **kwargs)
+        # Store the initial conditions if they are needed later
+        out['init_conds'] = ray_init
         return out
 
     def run(self, parallel=False, **kwargs):
         '''
-        Can pass kwargs to the rk solver to change order etc. See scipy.integrate.solveivp
-        for details
-
+        Can pass kwargs to the rk solver to change order etc.
+        See scipy.integrate.solveivp for details
         '''
-        # List of index, val which tells the solver to stop 
+        # List of index, val which tells the solver to stop
         # if it encounters a model boundary
         bounds = [[0, self.x_min],
                   [0, self.x_max],
@@ -138,7 +148,7 @@ class OnePointTrace3D():
 
         if parallel:
             from multiprocessing import Pool
-            from functools import partial 
+            from functools import partial
 
             n_procs = kwargs.pop('n_procs', 4)
             with Pool(n_procs) as p:
