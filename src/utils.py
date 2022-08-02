@@ -21,3 +21,9 @@ class Stopper:
         Stop if a ray exits the domain (i.e. the return of this function changes sign)
         '''
         return y_bar[self.idx]-self.bound
+
+def check_complex(init_conds):
+    import numpy as np
+    np.csingle
+    np.cdouble
+    np.clongdouble
