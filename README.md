@@ -19,9 +19,21 @@ Where $S(\mathbf{x}) = \frac{1}{V(\mathbf{x})}$ is the slowness or reciprocal of
 
 The user provides a velocity model, an initial source location $(x_0, y_0, z_0)$, and a takeoff direction specified by the inclination angle, $\alpha$ and azimuth angle, $\beta$.  The system is integrated by `scipy.integrate.solve_ivp` which by default uses an explicit Runge-Kutta method of order 5(4).
 
+:gear: Beams (coming soon) can be computed by also solving the auxillary equations
+
+$$
+\frac{dQ(\lambda)}{d\lambda}=v(\lambda)P(\lambda)
+$$
+
+$$
+\frac{dP(\lambda)}{d\lambda}=S\frac{\partial V (\lambda, n)}{\partial n^2}Q(\lambda)
+$$
+
+using the code `beam3d.py`
+
 # Requirements
 
-The only dependancies are Scipy and Numpy. An installation of Scipy includes Numpy so a working environemt can be built by
+The only dependancies are Scipy and Numpy. An installation of Scipy includes Numpy so a working environment can be built by
 
 ```
 conda create -n raytrace3d python=3.x #Change x to any scipy compatible python
