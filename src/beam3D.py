@@ -5,15 +5,23 @@ from typing import Tuple
 from utils import Stopper
 
 '''
-Solves one-point ray tracing
+Solves one-point beam tracing
 Requires src location, takeoff angle, and velocity
 '''
 
+#TODO 
+# Complex Initial conditions for all
+# Include initial conditions for Q and P DONE
+# Implement d2v/dn2
+# Add RHS terms for Q and P DONE
+
     
-class OnePointTrace3D():
+class OnePointBeam3D():
     def __init__(self,
                  src_coords: Tuple,
                  takeoff_angles: Tuple,
+                 P_0: Tuple,
+                 Q_0: Tuple,
                  velocity: np.ndarray,
                  x_coords: np.ndarray,
                  y_coords: np.ndarray,
@@ -37,12 +45,12 @@ class OnePointTrace3D():
         self.dz = z_coords[1]-z_coords[0]
 
         self.velocity = velocity
-        
+
         # If a single tuple is passed (i.e. one source and takeoff) 
         # wrap in a list so that zip expands correctly.
         if np.ndim(src_coords) <= 1:
             src_coords = [src_coords]
-            
+
         if np.ndim(takeoff_angles) <= 1:
             takeoff_angles = [takeoff_angles]
 
@@ -54,8 +62,10 @@ class OnePointTrace3D():
         self.y0 = []
 
         # Initial conditions
-        for src, angle in zip(src_coords, takeoff_angles):
-            self.y0.append(np.array([*src, *self.initialize_p(src, angle), 0]))
+        for src, angle, P_0i, Q_0i in zip(src_coords, takeoff_angles, P_0, Q_0):
+            #TODO assert complex for each
+            self.y0.append(np.array([*src, *self.initialize_p(src, angle), 0,\
+                                     P_0i, Q_0i]))
 
         # Stopping conditions. Rays will run until it hits the boundary or tf.
         # tf has the physical meaning of length along the ray
@@ -86,8 +96,7 @@ class OnePointTrace3D():
         return RegularGridInterpolator((x_coords,
                                         y_coords,
                                         z_coords),
-                                        1.0/vel,
-                                        method='linear')
+                                        1.0/vel)
 
     def deg2rad(self, theta):
         return theta*(np.pi/180)
@@ -103,20 +112,26 @@ class OnePointTrace3D():
         ds_dz = (s((x, y, z+self.dz))-s((x, y, z-self.dz)))/(2*self.dz)
         return ds_dx, ds_dy, ds_dz
 
+    def get_d2vdn2_n(self):
+        pass
+
     def rhs(self, t, y_bar):
         '''
         Right hand side of the ODE
-        y_bar has elements x, y, z, p_1, p_2, p_3, T
+        y_bar has elements x, y, z, p_1, p_2, p_3, T, Q, P
         '''
-        x, y, z, p1, p2, p3, T = y_bar
+        x, y, z, p1, p2, p3, T, Q, P = y_bar
 
         s = self.slowness((x, y, z))
         one_over_s = 1/s
 
         ds_dx, ds_dy, ds_dz = self.get_grad_s(self.slowness, (x, y, z))
 
+        d2v_dn2 = self.get_d2vdn2_n(self.slowness, (x, y, z))
+
         return (one_over_s)*p1, (one_over_s)*p2, (one_over_s)*p3, \
-                ds_dx, ds_dy, ds_dz, s
+                ds_dx, ds_dy, ds_dz, s, \
+                (one_over_s)*P, -(one_over_s**2)*Q*d2v_dn2
 
     def trace_single_ray(self, ray_init, events, **kwargs):
         out = solve_ivp(self.rhs,
