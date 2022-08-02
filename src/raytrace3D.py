@@ -86,7 +86,8 @@ class OnePointTrace3D():
         return RegularGridInterpolator((x_coords,
                                         y_coords,
                                         z_coords),
-                                        1.0/vel)
+                                        1.0/vel,
+                                        method='linear')
 
     def deg2rad(self, theta):
         return theta*(np.pi/180)
