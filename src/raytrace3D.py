@@ -96,7 +96,7 @@ class OnePointTrace3D():
         '''
         Simple central difference to approximate the gradient.
         '''
-        x, y, z = [item for item in coord]
+        x, y, z = coord
         # Could replace with a higher order scheme?
         ds_dx = (s((x+self.dx, y, z))-s((x-self.dx, y, z)))/(2*self.dx)
         ds_dy = (s((x, y+self.dy, z))-s((x, y-self.dy, z)))/(2*self.dy)
