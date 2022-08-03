@@ -44,8 +44,6 @@ class OnePointBeam3D():
         self.dy = y_coords[1]-y_coords[0]
         self.dz = z_coords[1]-z_coords[0]
 
-        self.velocity = velocity
-
         # If a single tuple is passed (i.e. one source and takeoff) 
         # wrap in a list so that zip expands correctly.
         if np.ndim(src_coords) <= 1:
@@ -57,7 +55,7 @@ class OnePointBeam3D():
         self.n_pad = n_pad
 
         # Create interpolator objects for common terms
-        self.slowness = self.initialize_slowness()
+        self.slowness = self.initialize_slowness(velocity)
 
         self.y0 = []
 
@@ -79,7 +77,7 @@ class OnePointBeam3D():
         p_3 = s_0*np.cos(alpha)
         return (p_1, p_2, p_3)
 
-    def initialize_slowness(self):
+    def initialize_slowness(self, velocity):
         '''
         Add padding so that if the slowness is
         computed outside of the domain (when the ray escapes)
@@ -91,7 +89,7 @@ class OnePointBeam3D():
                           reflect_type='odd')
         z_coords = np.pad(self.z_coords, self.n_pad,
                           mode='reflect', reflect_type='odd')
-        vel = np.pad(self.velocity, self.n_pad, mode='edge')
+        vel = np.pad(velocity, self.n_pad, mode='edge')
 
         return RegularGridInterpolator((x_coords,
                                         y_coords,
