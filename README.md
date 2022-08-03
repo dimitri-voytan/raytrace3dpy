@@ -76,3 +76,5 @@ Multiple rays can be traced by passing a list of tuples for the source coordinat
 ```
 out = tracer.run(parallel=True, n_procs=6)
 ```
+
+The parallelization uses *processes* which duplicates the solver object for each ray. Since we need to store the velocity model as an instance attribute, if the velocity model is large a parallel run can consume a significant amount of memory. 
