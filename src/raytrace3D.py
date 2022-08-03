@@ -21,7 +21,7 @@ class OnePointTrace3D():
                  lf: float,
                  n_pad: int = 10):
         '''
-        takeoff angle: Tuple of (inclination [0:pi), azimuth [0:2pi) )
+        takeoff angle: Tuple of (inclination [0:180) degrees, azimuth [0:360) degrees)
         '''
         # Regularly sampled grid
         self.x_coords = x_coords
