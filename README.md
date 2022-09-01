@@ -61,8 +61,6 @@ init_conds = out['init_conds']
 Refer to the Scipy documentation for more details about the solver and the output object.
 
 2. The properties of the solver can be modified by passing `kwargs` through to the scipy API.
-3. The code may throw an error if, during the solving phase, a value of $\mathbf{x}$ outside of the slowness domain is queried (this happens as the ray is exiting the domiain). This can be avoided by passing as an argument to the solver `max_step=n*max_dx` where $n$ can be up to 5. 
-4. The parameter $\lambda_f$ can be set arbitrarily high as the solution will terminate if the ray leaves the domain. 
 
 
 ## Specifiying the takeoff angle
