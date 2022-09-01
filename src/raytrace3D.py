@@ -1,105 +1,58 @@
 from scipy.integrate import solve_ivp
-from scipy.interpolate import RegularGridInterpolator
 import numpy as np
 from typing import Tuple
-from utils import Stopper
+from domain import Domain, Boundaries, Slowness
+from utils import timing
 
-'''
-Solves one-point ray tracing
-Requires src location, takeoff angle, and velocity
-'''
 
-    
 class OnePointTrace3D():
+
     def __init__(self,
                  src_coords: Tuple,
                  takeoff_angles: Tuple,
-                 velocity: np.ndarray,
-                 x_coords: np.ndarray,
-                 y_coords: np.ndarray,
-                 z_coords: np.ndarray,
-                 lf: float,
-                 n_pad: int = 10):
-        '''
-        takeoff angle: Tuple of (inclination [0:180) degrees, azimuth [0:360) degrees)
-        '''
-        # Regularly sampled grid
-        self.x_coords = x_coords
-        self.y_coords = y_coords
-        self.z_coords = z_coords
+                 domain: Domain,
+                 slowness: Slowness,
+                 lambda_final: float
+                 ):
 
-        self.x_min, self.x_max = np.min(x_coords), np.max(x_coords)
-        self.y_min, self.y_max = np.min(y_coords), np.max(y_coords)
-        self.z_min, self.z_max = np.min(z_coords), np.max(z_coords)
-
-        self.dx = x_coords[1]-x_coords[0]
-        self.dy = y_coords[1]-y_coords[0]
-        self.dz = z_coords[1]-z_coords[0]
-        
-        # If a single tuple is passed (i.e. one source and takeoff) 
-        # wrap in a list so that zip expands correctly.
-        if np.ndim(src_coords) <= 1:
-            src_coords = [src_coords]
-            
-        if np.ndim(takeoff_angles) <= 1:
-            takeoff_angles = [takeoff_angles]
-
-        self.n_pad = n_pad
-
-        # Create interpolator objects for common terms
-        self.slowness = self.initialize_slowness(velocity)
+        self.lf = lambda_final
+        self.domain = domain
+        self.s = slowness
 
         self.y0 = []
 
-        # Initial conditions
+        # If a single tuple is passed (i.e. one source and takeoff)
+        # wrap in a list so that zip expands correctly.
+        if np.ndim(src_coords) <= 1:
+            src_coords = [src_coords]
+
+        if np.ndim(takeoff_angles) <= 1:
+            takeoff_angles = [takeoff_angles]
+
         for src, angle in zip(src_coords, takeoff_angles):
             self.y0.append(np.array([*src, *self.initialize_p(src, angle), 0]))
 
-        # Stopping conditions. Rays will run until it hits the boundary or tf.
-        # tf has the physical meaning of length along the ray
-        self.lf = lf
-
     def initialize_p(self, src, angle):
-        s_0 = self.slowness(src)
-        alpha, beta = [self.deg2rad(item) for item in angle]
-        p_1 = s_0*np.sin(alpha)*np.cos(beta)
-        p_2 = s_0*np.sin(alpha)*np.sin(beta)
-        p_3 = s_0*np.cos(alpha)
+        '''
+        Note: s, the slowness array must be defined globally to avoid pickling it if running in parallel
+        '''
+        alpha, beta = [OnePointTrace3D.deg2rad(item) for item in angle]
+        x_idx, y_idx, z_idx = self.find_nearest_idx(*src)
+        s_0 = self.s[x_idx, y_idx, z_idx]
+        p_1 = s_0 * np.sin(alpha) * np.cos(beta)
+        p_2 = s_0 * np.sin(alpha) * np.sin(beta)
+        p_3 = s_0 * np.cos(alpha)
         return (p_1, p_2, p_3)
 
-    def initialize_slowness(self, velocity):
-        '''
-        Add padding so that if the slowness is
-        computed outside of the domain (when the ray escapes)
-        this will be properly handled
-        '''
-        x_coords = np.pad(self.x_coords, self.n_pad,
-                          mode='reflect', reflect_type='odd')
-        y_coords = np.pad(self.y_coords, self.n_pad, mode='reflect',
-                          reflect_type='odd')
-        z_coords = np.pad(self.z_coords, self.n_pad,
-                          mode='reflect', reflect_type='odd')
-        vel = np.pad(velocity, self.n_pad, mode='edge')
+    def find_nearest_idx(self, x, y, z):
+        idx_x = int(np.round((x - self.domain.x_min) / self.domain.dx))
+        idx_y = int(np.round((y - self.domain.y_min) / self.domain.dy))
+        idx_z = int(np.round((z - self.domain.z_min) / self.domain.dz))
+        return idx_x, idx_y, idx_z
 
-        return RegularGridInterpolator((x_coords,
-                                        y_coords,
-                                        z_coords),
-                                        1.0/vel,
-                                        method='linear')
-
-    def deg2rad(self, theta):
-        return theta*(np.pi/180)
-
-    def get_grad_s(self, s, coord):
-        '''
-        Simple central difference to approximate the gradient.
-        '''
-        x, y, z = coord
-        # Could replace with a higher order scheme?
-        ds_dx = (s((x+self.dx, y, z))-s((x-self.dx, y, z)))/(2*self.dx)
-        ds_dy = (s((x, y+self.dy, z))-s((x, y-self.dy, z)))/(2*self.dy)
-        ds_dz = (s((x, y, z+self.dz))-s((x, y, z-self.dz)))/(2*self.dz)
-        return ds_dx, ds_dy, ds_dz
+    @staticmethod
+    def deg2rad(theta):
+        return theta * (np.pi / 180)
 
     def rhs(self, t, y_bar):
         '''
@@ -108,13 +61,20 @@ class OnePointTrace3D():
         '''
         x, y, z, p1, p2, p3, T = y_bar
 
-        s = self.slowness((x, y, z))
-        one_over_s = 1/s
+        x_idx, y_idx, z_idx = self.find_nearest_idx(x, y, z)
 
-        ds_dx, ds_dy, ds_dz = self.get_grad_s(self.slowness, (x, y, z))
+        try:
+            s_i = self.s[x_idx, y_idx, z_idx]
+            one_over_s = 1 / s_i
+            ds_dx, ds_dy, ds_dz = self.s.grad[:, x_idx, y_idx, z_idx]
+        except IndexError:
+            # Gracefully handles domain exits if an index error occurs
+            s_i = 0
+            one_over_s = 0
+            ds_dx, ds_dy, ds_dz = (0, 0, 0)
 
-        return (one_over_s)*p1, (one_over_s)*p2, (one_over_s)*p3, \
-                ds_dx, ds_dy, ds_dz, s
+        return (one_over_s) * p1, (one_over_s) * p2, (one_over_s) * p3, \
+            ds_dx, ds_dy, ds_dz, s_i
 
     def trace_single_ray(self, ray_init, events, **kwargs):
         out = solve_ivp(self.rhs,
@@ -126,34 +86,32 @@ class OnePointTrace3D():
         out['init_conds'] = ray_init
         return out
 
-    def run(self, parallel=False, **kwargs):
+    @timing
+    def run(self,
+            bounds: Boundaries,
+            parallel: bool = False,
+            **kwargs):
         '''
         Can pass kwargs to the rk solver to change order etc.
         See scipy.integrate.solveivp for details
         '''
-        # List of index, val which tells the solver to stop
-        # if it encounters a model boundary
-        bounds = [[0, self.x_min],
-                  [0, self.x_max],
-                  [1, self.y_min],
-                  [1, self.y_max],
-                  [2, self.z_min],
-                  [2, self.z_max]]
-
-        event_list = [Stopper(bound[0], bound[1]) for bound in bounds]
-        events = [event.stopping_criteria for event in event_list]
 
         out = []
 
         if parallel:
-            from multiprocessing import Pool
-            from functools import partial
+            raise NotImplementedError
+            # from multiprocessing import Pool
+            # from functools import partial
 
-            n_procs = kwargs.pop('n_procs', 4)
-            with Pool(n_procs) as p:
-                f = partial(self.trace_single_ray, events=events, **kwargs)
-                out = p.map(f, self.y0)
+            # n_procs = kwargs.pop('n_procs', os.cpu_count())
+            # with Pool(n_procs) as p:
+            #     f = partial(self.trace_single_ray, events=bounds.events, **kwargs)
+            #     out = p.map(f, self.y0)
         else:
             for ray_init in self.y0:
-                out.append(self.trace_single_ray(ray_init, events, **kwargs))
+                out.append(
+                    self.trace_single_ray(
+                        ray_init,
+                        bounds.events,
+                        **kwargs))
         return out
