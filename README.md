@@ -35,6 +35,8 @@ using the code `beam3d.py`
 
 The only dependancies are Scipy and Numpy. An installation of Scipy includes Numpy so a working environment can be built by
 
+
+If you use anaconda to manage your environment
 ```
 conda create -n raytrace3d python=3.x #Change x to any scipy compatible python
 conda activate raytrace3d
