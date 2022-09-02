@@ -33,9 +33,6 @@ class OnePointTrace3D():
             self.y0.append(np.array([*src, *self.initialize_p(src, angle), 0]))
 
     def initialize_p(self, src, angle):
-        '''
-        Note: s, the slowness array must be defined globally to avoid pickling it if running in parallel
-        '''
         alpha, beta = [OnePointTrace3D.deg2rad(item) for item in angle]
         x_idx, y_idx, z_idx = self.find_nearest_idx(*src)
         s_0 = self.s[x_idx, y_idx, z_idx]
@@ -57,7 +54,6 @@ class OnePointTrace3D():
     def rhs(self, t, y_bar):
         '''
         Right hand side of the ODE
-        y_bar has elements x, y, z, p_1, p_2, p_3, T
         '''
         x, y, z, p1, p2, p3, T = y_bar
 
@@ -100,6 +96,8 @@ class OnePointTrace3D():
 
         if parallel:
             raise NotImplementedError
+            # It will usually be more expensive to run in parallel than to run serially
+            # due to pickling of the class. 
             # from multiprocessing import Pool
             # from functools import partial
 
