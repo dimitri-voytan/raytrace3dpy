@@ -15,21 +15,10 @@ $$
 \frac{d T}{d\lambda} = S(\mathbf{x})
 $$
 
-Where $S(\mathbf{x}) = \frac{1}{V(\mathbf{x})}$ is the slowness or reciprocal of velocity, $\mathbf{x}$ is the spatial coordinate of the ray, $\mathbf{p}$ is the ray vector, $T$ is the traveltime along the ray, and $\lambda$ is a paramater that increases monotonically along the ray; it has the physical meaning of length along the ray.
+Where $S(\mathbf{x}) = \frac{1}{V(\mathbf{x})}$ is the slowness (reciprocal of velocity), $\mathbf{x}$ is the spatial coordinate of the ray, $\mathbf{p}$ is the ray vector, $T$ is the traveltime along the ray, and $\lambda$ is a parameter that increases monotonically along the ray; it has the physical meaning of length along the ray.
 
 The user provides a velocity model, an initial source location $(x_0, y_0, z_0)$, and a takeoff direction specified by the inclination angle, $\alpha$ and azimuth angle, $\beta$.  The system is integrated by `scipy.integrate.solve_ivp` which by default uses an explicit Runge-Kutta method of order 5(4).
 
-:gear: Beams (coming soon) can be computed by also solving the auxillary equations
-
-$$
-\frac{dQ(\lambda)}{d\lambda}=v(\lambda)P(\lambda)
-$$
-
-$$
-\frac{dP(\lambda)}{d\lambda}=S\frac{\partial V (\lambda, n)}{\partial n^2}Q(\lambda)
-$$
-
-using the code `beam3d.py`
 
 # Requirements
 
@@ -54,7 +43,7 @@ pip install scipy
 
 The tutorial notebook `tutorial.ipynb` shows an example of setting up the solver and tracing rays in a simple velocity model. Below I list a few key considerations for a user 
 
-1. The output of a run is a list of [solution objects](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html#scipy.integrate.solve_ivp) for each ray. It has attributes which can be accesed in a dictionary like manner to view the solution and the evaluation points. The solution is stored in the attribute `y` and the evaluation $\lambda$'s are stored in `t`. For example, if you traced a single ray and stored the solution in `out` you can access the $\mathbf{x}$ coordinates of the ray, $\mathbf{p}$ values, and traveltime $T$ by:
+1. The output of a run is a list of [solution objects](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html#scipy.integrate.solve_ivp) for each ray. It has values which can be accesed in a dictionary like manner to view the solution and the evaluation points. The solution is stored in the attribute `y` and the evaluation $\lambda$'s are stored in `t`. For example, if you traced a single ray and stored the solution in `out` you can access the $\mathbf{x}$ coordinates of the ray, $\mathbf{p}$ values, and traveltime $T$ by:
 
 ```
 x, y, z, = out['y'][0], out['y'][1], out['y'][2]
@@ -62,7 +51,7 @@ p_0, p_1, p_2, = out['y'][3], out['y'][4], out['y'][5]
 T = out['y'][-1]
 lambdas = out['t']
 ```
-The initial conditions are also available under the attribute 
+The initial conditions are also available under the key 
 
 ```
 init_conds = out['init_conds']
@@ -78,10 +67,4 @@ The takeoff direction is specified with a pair of angles $(\alpha, \beta)$. $\al
 
 ## Tracing multiple rays
 
-Multiple rays can be traced by passing a list of tuples for the source coordinates and takeoff angles e.g. `srcs=[(0,0,0), (0,0,0)]` `angles=[(0,45), (0,30)]`. Tracing can be run in parallel by passing `parallel=True` and `n_procs` to the runner. For example
-
-```
-out = tracer.run(parallel=True, n_procs=6)
-```
-
-The parallelization uses *processes* which duplicates the solver object for each ray. Since we need to store the velocity model as an instance attribute, if the velocity model is large a parallel run can consume a significant amount of memory. 
+Multiple rays can be traced by passing a list of tuples for the source coordinates and takeoff angles e.g. `srcs=[(0,0,0), (0,0,0)]` `angles=[(0,45), (0,30)]`.
